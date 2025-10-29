@@ -1,10 +1,10 @@
-use crate::{data::bar::Bar, models::order::{Order, OrderSide}};
+use crate::data::{bar::Bar, order::{Order, OrderSide}};
 use super::Strategy;
 
 pub struct AlwaysBuy;
 
 impl Strategy for AlwaysBuy {
-    fn generate_order(&self, bar: &Bar) -> Option<Order> {
+    fn generate_signal(&self, bar: &Bar) -> Option<Order> {
         if bar.close > bar.open && bar.volume > 10000{
             Some(Order {
                 side: OrderSide::Buy,
@@ -33,7 +33,7 @@ mod tests {
             volume: 23000,
         };
         let strategy = AlwaysBuy;
-        let order = strategy.generate_order(&bar);
+        let order = strategy.generate_signal(&bar);
         assert!(order.is_some());
     }
 
@@ -48,7 +48,7 @@ mod tests {
             volume: 9000,
         };
         let strategy = AlwaysBuy;
-        let order = strategy.generate_order(&bar);
+        let order = strategy.generate_signal(&bar);
         assert!(order.is_none());
     }
 
@@ -63,7 +63,7 @@ mod tests {
             volume: 8700,
         };
         let strategy = AlwaysBuy;
-        let order = strategy.generate_order(&bar);
+        let order = strategy.generate_signal(&bar);
         assert!(order.is_none());
     }
 

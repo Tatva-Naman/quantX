@@ -1,9 +1,8 @@
 pub mod always_buy;
 pub mod always_sell;
 
-use crate::models::order::Order;
-use crate::data::bar::Bar;
+use crate::data::{bar::Bar, order::Order};
 
 pub trait Strategy {
-    fn generate_order(&self, bar: &Bar) -> Option<Order>;
+    fn generate_signal(&self, bar: &Bar) -> Option<Order>;
 }
