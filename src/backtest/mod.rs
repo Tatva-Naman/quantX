@@ -26,12 +26,13 @@ impl<'a > Backtester<'a > {
         let strategies_clone = self.strategies.clone();
 
         for bar in bars.iter() {
+            println!("Processing Bar: {:?}", bar);
             for strategy in &strategies_clone {
                 if let Some(order) = strategy.generate_signal(bar) {
                     self.execute_order(order);
                 }
             }
-        }
+        } 
 
         self.square_off();
     }
@@ -73,7 +74,6 @@ impl<'a > Backtester<'a > {
             }
         }
     }
-
 
     pub fn summary(&self) {
         println!("--- Backtest Summary ---");
