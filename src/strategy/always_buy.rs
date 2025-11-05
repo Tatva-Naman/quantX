@@ -5,7 +5,7 @@ pub struct AlwaysBuy;
 
 impl Strategy for AlwaysBuy {
     fn generate_signal(&self, bar: &Bar) -> Option<Order> {
-        if bar.close > bar.open && bar.volume > 10000{
+        if bar.close > bar.open && bar.volume > 1000.0{
             Some(Order {
                 side: OrderSide::Buy,
                 price: bar.close,
@@ -30,7 +30,7 @@ mod tests {
             high: 105.0,
             low: 99.0,
             close: 104.0,
-            volume: 23000,
+            volume: 23000.0,
         };
         let strategy = AlwaysBuy;
         let order = strategy.generate_signal(&bar);
@@ -45,7 +45,7 @@ mod tests {
             high: 102.0,
             low: 98.0,
             close: 99.0,
-            volume: 9000,
+            volume: 9000.0,
         };
         let strategy = AlwaysBuy;
         let order = strategy.generate_signal(&bar);
@@ -60,7 +60,7 @@ mod tests {
             high: 105.0,
             low: 99.0,
             close: 104.0,
-            volume: 8700,
+            volume: 8700.0,
         };
         let strategy = AlwaysBuy;
         let order = strategy.generate_signal(&bar);

@@ -5,7 +5,7 @@ pub struct Bar {
     pub high: f64,
     pub low: f64,
     pub close: f64,
-    pub volume: i64,
+    pub volume: f64,
 }
 
 #[cfg(test)]
@@ -20,7 +20,7 @@ mod tests {
             high: 2.0,
             low: 0.5,
             close: 1.5,
-            volume: 140,
+            volume: 140.00,
         };
         assert_eq!(bar.close, 1.5);
     }
