@@ -9,7 +9,7 @@ impl Strategy for AlwaysBuy {
             Some(Order {
                 side: OrderSide::Buy,
                 price: bar.close,
-                quantity: 10,
+                quantity: 1,
                 timestamp: bar.timestamp.clone(),
             })
         }else{

@@ -10,7 +10,7 @@ impl Strategy for AlwaysSell {
             Some(Order {
                 side: OrderSide::Sell,
                 price: bar.close,
-                quantity: 10,
+                quantity: 1,
                 timestamp: bar.timestamp.clone(),
             })
         }else{

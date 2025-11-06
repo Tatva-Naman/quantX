@@ -24,8 +24,6 @@ pub fn run_simulation(strategy: &dyn Strategy, bars: Arc<Vec<Bar>>) -> Vec<Order
         }
         println!("{} : {:?}", index, bar);
         index = index + 1;
-
-
     }
 
     orders

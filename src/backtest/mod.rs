@@ -1,88 +1,68 @@
 use std::sync::Arc;
 
-use crate::{data::{bar::Bar, order::{Order, OrderSide}}, strategy::{self, Strategy}};
+use crate::data::bar::Bar;
+use crate::data::downloader::download_and_extract_for_date;
+use crate::data::loader::CsvLoader;
+use crate::data::order::OrderSide;
+use crate::strategy::Strategy;
+use chrono::{Duration, Utc};
+use tokio::task::JoinHandle;
 
-pub struct Backtester<'a> {
-    strategies: Vec<&'a dyn Strategy>,
-    bars: Arc<Vec<Bar>>,
-    orders: Vec<Order>,
-    cash: f64,
-    position: i64,
+#[derive(Debug)]
+pub struct DailyResult {
+    pub date: String,
+    pub pnl: f64,
+    pub trades: usize,
 }
 
-impl<'a > Backtester<'a > {
-    pub fn new(strategies: Vec<&'a dyn Strategy>, bars: Arc<Vec<Bar>>, starting_cash: f64) -> Self {
-        Self {
-            strategies,
-            bars,
-            orders: Vec::new(),
-            cash: starting_cash,
-            position: 0,
-        }
-    }
+/// Single-day backtest (EOD square-off)
+pub fn backtest_single_day(
+    strategies: &[Arc<dyn Strategy>],
+    bars: &[Bar],
+    date: &str,
+) -> DailyResult {
+    let mut cash = 10_00000.0;
+    let mut position: i64 = 0;
+    let mut trades = 0usize;
 
-    pub fn run(&mut self) {
-        let bars = Arc::clone(&self.bars);
-        let strategies_clone = self.strategies.clone();
-
-        for bar in bars.iter() {
-            println!("Processing Bar: {:?}", bar);
-            for strategy in &strategies_clone {
-                if let Some(order) = strategy.generate_signal(bar) {
-                    self.execute_order(order);
+    for bar in bars {
+        for strat in strategies {
+            if let Some(order) = strat.generate_signal(bar) {
+                trades += 1;
+                match order.side {
+                    OrderSide::Buy => {
+                        if cash > order.price {
+                            cash -= order.price * order.quantity as f64;
+                            position += order.quantity;
+                        }
+                    }
+                    OrderSide::Sell => {
+                        cash += order.price * order.quantity as f64;
+                        position -= order.quantity;
+                    }
                 }
             }
-        } 
-
-        self.square_off();
-    }
-
-    pub fn execute_order(&mut self, order: Order) {
-        match order.side {
-            OrderSide::Buy => {
-                self.cash -= order.price * order.quantity as f64;
-                self.position += order.quantity;
-            }
-            OrderSide::Sell => {
-                self.cash += order.price * order.quantity as f64;
-                self.position -= order.quantity;
-            }
-        }
-        self.orders.push(order);
-    }
-
-    fn square_off(&mut self) {
-        if self.position != 0 {
-            if let Some(last_bar) = self.bars.last() {
-                let side = if self.position > 0 {
-                    OrderSide::Sell
-                } else {
-                    OrderSide::Buy
-                };
-
-                let quantity = self.position.abs();
-
-                let square_off_order = Order {
-                    side,
-                    price: last_bar.close,
-                    quantity,
-                    timestamp: last_bar.timestamp.clone(),
-                };
-
-                self.execute_order(square_off_order);
-                println!("🔄 Auto Square Off executed for {} units", quantity);
-            }
         }
     }
 
-    pub fn summary(&self) {
-        println!("--- Backtest Summary ---");
-        println!("Final Cash: {:.2}", self.cash);
-        println!("Final Position: {}", self.position);
-        println!("Total Orders: {}", self.orders.len());
+    // EOD square-off using last bar
+    if position != 0 {
+        if let Some(last) = bars.last() {
+            // if position>0 we sell, else buy to cover
+            if position > 0 {
+                cash += last.close * (position.abs() as f64);
+            } else {
+                cash -= last.close * (position.abs() as f64);
+            }
+            position = 0;
+        }
     }
-    
-    pub fn get_orders(&self) -> &Vec<Order> {
-        &self.orders
+
+    let pnl = cash - 10_00000.0;
+    print!("Date: {}, PnL: {:.2}, Trades: {}\n", date, pnl, trades);
+    DailyResult {
+        date: date.to_string(),
+        pnl,
+        trades,
     }
 }

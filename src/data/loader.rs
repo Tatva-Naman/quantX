@@ -14,16 +14,16 @@ impl CsvLoader {
         }
     }
 
-    pub fn load(&self) -> Result<Vec<Bar>, Box<dyn Error>> {
+    pub fn load(&self) -> Result<Vec<Bar>, Box<dyn Error + Send + Sync>> {
         let file = File::open(&self.path)?;
+        // Binance files have no header row
         let mut rdr = ReaderBuilder::new()
-            .has_headers(true)
+            .has_headers(false)
             .from_reader(BufReader::new(file));
 
         let mut bars = Vec::new();
         for result in rdr.records() {
             let record = result?;
-
             let ts_micro: i64 = record[0].parse::<i64>()?;
             let ts_sec = ts_micro / 1_000_000;
             let naive = NaiveDateTime::from_timestamp_opt(ts_sec, 0).ok_or("Invalid timestamp")?;
