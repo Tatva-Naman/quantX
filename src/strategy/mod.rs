@@ -1,5 +1,6 @@
 pub mod always_buy;
 pub mod always_sell;
+pub mod ema_switch;
 
 use crate::data::{bar::Bar, order::Order};
 
