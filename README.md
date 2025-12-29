@@ -1,134 +1,152 @@
+
 ---
 
 # QuantX — Rust Trading Backtester
 
 QuantX is a lightweight algorithmic trading research and backtesting engine written in **Rust**.
-It is designed for experimenting with trading strategies on historical crypto market data, with a focus on performance, correctness, and realistic execution modeling.
+It focuses on correctness, execution realism, and high-performance multi-year backtesting.
 
 ---
 
 ## 🚀 Features
 
-* Download historical **Binance 1-hour candles**
-* Parse & load CSV into typed bar structures
-* Run strategies over multi-year datasets
-* Support for:
+* Binance historical **1-hour candle data**
+* Auto-download & unzip per-day CSV files
+* Continuous multi-year aggregation pipeline
+* Strategy engine with:
 
-  * Continuous EMA trend-switch strategy
-  * Always-Buy / Always-Sell baseline models
-* Realistic execution logic:
+  * EMA trend-switch strategy
+  * Always-Buy & Always-Sell baselines
+* Realistic execution:
 
-  * Position square-off
   * Dynamic position sizing
-  * Fees & slippage modeling
-* Generates backtest statistics:
-
-  * Final cash
-  * Net PnL
-  * Win / loss count
-  * Trade count
+  * Fees & slippage
+  * Position square-off handling
+* Performance statistics output
 
 ---
 
-## ⚙️ Current Strategy: EMA Trend Switch
+## ⚙️ Advanced Concepts Used (Core Strength of This Project)
 
-Trend bias is determined using rolling EMAs.
+This project is not just a toy backtester — it intentionally uses **real-world systems engineering techniques**.
 
-| Condition                            | Action                  |
-| ------------------------------------ | ----------------------- |
-| Short EMA **crosses above** Long EMA | Close short → Open long |
-| Short EMA **crosses below** Long EMA | Close long → Open short |
+### ✅ Asynchronous & Parallel Data Pipeline
 
-Only **one position is active at a time**.
+| Stage                     | Technology                 | Purpose                                  |
+| ------------------------- | -------------------------- | ---------------------------------------- |
+| Binance downloads         | `Tokio async + reqwest`    | Non-blocking HTTP                        |
+| Multi-file parallel fetch | `tokio::spawn + Semaphore` | Controlled concurrency batch scheduling  |
+| CSV parsing               | `spawn_blocking()`         | Runs parsing on dedicated worker threads |
+| Backtest execution        | sync compute loop          | Efficient CPU-tight processing           |
 
-Fees & slippage are applied on every execution.
+### 🔹 Downloading = Multiprocessing-Style Concurrency
+
+Multiple dates are downloaded concurrently:
+
+* Each task runs independently
+* Network I/O does not block the runtime
+* Concurrency limit prevents overload
+* Behaves similar to **process pool batching**
+
+But implemented safely using async tasks instead of real OS processes.
+
+### 🔹 CSV Parsing = True Multithreading
+
+CSV parsing is CPU-bound work — so we offload it to worker threads:
+
+```rust
+tokio::task::spawn_blocking(|| loader.load())
+```
+
+This ensures:
+
+* No blocking inside async runtime
+* Parsing runs on **separate OS threads**
+* CPU cores stay fully utilized
+* Memory safety guaranteed by Rust
+
+This is a real-world production-grade pattern.
 
 ---
 
-## 🧩 Project Architecture (Compact)
+## 🧩 Project Architecture
 
 ```
 quantX
 │
 ├── main.rs
 │   ├── async downloader (Tokio)
-│   ├── multi-day CSV aggregation
-│   ├── continuous strategy backtest
-│   └── cleanup & reporting
+│   ├── batched parallel file fetch
+│   ├── CSV parsing workers (spawn_blocking)
+│   ├── multi-year bar aggregation
+│   └── continuous EMA backtest runner
 │
 ├── data/
-│   ├── bar.rs          → Market candle model
-│   ├── loader.rs       → CSV → Vec<Bar>
-│   └── downloader.rs   → Download + unzip Binance data
+│   ├── bar.rs
+│   ├── loader.rs
+│   └── downloader.rs
 │
 ├── strategy/
-│   ├── strategy.rs     → Strategy trait
 │   ├── always_buy.rs
 │   ├── always_sell.rs
-│   └── ema_switch.rs   → EMA crossover switching logic
+│   └── ema_switch.rs
 │
 └── backtest/
     └── backtest_ema_crossover.rs
-        → Execution engine + PnL + fees + slippage
 ```
 
 ---
 
 ## ⚡ Quick Start
 
-### 1️⃣ Install Rust
+Install Rust:
 
 ```bash
 https://rustup.rs
 ```
 
-### 2️⃣ Clone Repository
+Clone repo:
 
 ```bash
 git clone <repo-url>
 cd quantX
 ```
 
-### 3️⃣ Build
-
-```bash
-cargo build
-```
-
-### 4️⃣ Run Continuous Multi-Year Backtest
+Run backtest:
 
 ```bash
 cargo run
 ```
 
-The program will:
+The engine will:
 
-1. Download Binance hourly candles
-2. Merge historical CSV files
-3. Run EMA crossover strategy
-4. Apply fees + slippage
-5. Print detailed performance summary
+1. Download multi-year historical data
+2. Parse CSV files in parallel
+3. Merge candles into a single timeline
+4. Run EMA trend-switch strategy
+5. Apply fees + slippage
+6. Print detailed performance summary
 
 ---
 
 ## 🧠 Why Rust for Quant Backtesting?
 
+* Predictable execution
+* Strong type safety
 * Zero-cost abstractions
-* Deterministic memory behavior
-* High-performance loops for bar processing
-* Safe concurrency with Tokio
-* Great foundation for **future live-trading bots**
+* Safe concurrency model
+* Ideal for research → live trading pipelines
 
-This engine is intentionally lightweight and modular to encourage experimentation.
+This project is intentionally structured like a **real quant stack**.
 
 ---
 
-## 📌 Future Roadmap
+## 📌 Future Enhancements
 
-* Portfolio support (multi-symbol)
-* Risk models & position sizing modes
-* Advanced metrics (Sharpe, Sortino, DD)
-* Strategy parameter optimization
-* Live trading gateway (paper → real)
+* Multi-symbol portfolio backtesting
+* Risk models & exposure limits
+* Performance metrics (Sharpe / Sortino / DD)
+* Parameter grid-search optimizer
+* Live trading bridge (paper → real)
 
 ---

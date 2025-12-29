@@ -114,8 +114,8 @@ async fn run_sync_backtest() {
 async fn run_continous_backtest() {
     let symbol = "BTCUSDT";
     let interval = "1h";
-    let days = 365 * 3 ;
-    let concurrency = 20usize;
+    let days = 365 * 2 ;
+    let concurrency = 30usize;
 
     println!("🚀 Downloading ~{} days (≈2 years) of {} {} data...", days, symbol, interval);
 
@@ -174,5 +174,5 @@ async fn run_continous_backtest() {
         let _ = tokio::fs::remove_file(zip).await;
     }
 
-    println!("✅ Continuous 2-year EMA crossover backtest completed.");
+    println!("✅ Continuous EMA crossover backtest completed.");
 }
