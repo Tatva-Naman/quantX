@@ -36,7 +36,7 @@ fn run_strategy_simulations(bars: Arc<Vec<Bar>>) {
 }
 
 async fn run_sync_backtest() {
-    println!("Starting async daily EOD backtest (batched concurrency = 5)");
+    println!("Starting async daily EOD backtest (batched concurrency = 30)");
 
     let symbol = "BTCUSDT";
     let interval = "1h";
@@ -117,7 +117,7 @@ async fn run_continous_backtest() {
     let days = 365 * 2 ;
     let concurrency = 30usize;
 
-    println!("🚀 Downloading ~{} days (≈2 years) of {} {} data...", days, symbol, interval);
+    println!("Downloading ~{} days (≈2 years) of {} {} data...", days, symbol, interval);
 
     let sem = Arc::new(tokio::sync::Semaphore::new(concurrency));
     let mut handles = Vec::new();
@@ -151,7 +151,7 @@ async fn run_continous_backtest() {
 
     // Sort chronologically
     all_csvs.sort();
-    println!("✅ Downloaded {} days of data.", all_csvs.len());
+    println!("Downloaded {} days of data.", all_csvs.len());
 
     // Merge all bars sequentially
     let mut all_bars: Vec<Bar> = Vec::new();
@@ -160,19 +160,19 @@ async fn run_continous_backtest() {
         let loader = CsvLoader::new(csv);
         match loader.load() {
             Ok(mut bars) => all_bars.append(&mut bars),
-            Err(e) => eprintln!("⚠️ Failed to load {}: {}", csv, e),
+            Err(e) => eprintln!("Failed to load {}: {}", csv, e),
         }
     }
 
-    println!("📊 Loaded {} bars total — running EMA backtest...", all_bars.len());
+    println!("Loaded {} bars total — running EMA backtest...", all_bars.len());
     backtest_ema_crossover::continuous_backtest(&all_bars);
 
-    println!("🧹 Cleaning up files...");
+    println!(" Cleaning up files...");
     for csv in &all_csvs {
         let zip = csv.replace(".csv", ".zip");
         let _ = tokio::fs::remove_file(csv).await;
         let _ = tokio::fs::remove_file(zip).await;
     }
 
-    println!("✅ Continuous EMA crossover backtest completed.");
+    println!("Continuous EMA crossover backtest completed.");
 }
